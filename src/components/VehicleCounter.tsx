@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Bike, Car, Truck, Bus, Plus, X, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bike, Car, Truck, Bus, Plus, X, Clock, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
 
@@ -89,11 +89,12 @@ interface CounterCardProps {
   vehicle: VehicleType;
   count: number;
   onIncrement: () => void;
+  onEdit: () => void;
   onDelete?: () => void;
   isPressed: boolean;
 }
 
-const CounterCard = ({ vehicle, count, onIncrement, onDelete, isPressed }: CounterCardProps) => {
+const CounterCard = ({ vehicle, count, onIncrement, onEdit, onDelete, isPressed }: CounterCardProps) => {
   const [animating, setAnimating] = useState(false);
 
   useEffect(() => {
@@ -106,17 +107,30 @@ const CounterCard = ({ vehicle, count, onIncrement, onDelete, isPressed }: Count
 
   return (
     <div className={`counter-card ${vehicle.colorClass} relative`}>
-      {vehicle.isCustom && onDelete && (
+      <div className="absolute top-2 right-2 flex gap-1 z-10">
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onDelete();
+            onEdit();
           }}
-          className="absolute top-2 right-2 p-1 rounded-full bg-secondary hover:bg-destructive transition-colors z-10"
+          className="p-1.5 rounded-full bg-secondary hover:bg-primary hover:text-primary-foreground transition-colors"
+          title="แก้ไข"
         >
-          <X className="w-4 h-4" />
+          <Pencil className="w-3.5 h-3.5" />
         </button>
-      )}
+        {vehicle.isCustom && onDelete && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="p-1.5 rounded-full bg-secondary hover:bg-destructive transition-colors"
+            title="ลบ"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
       <button
         onClick={onIncrement}
         className="w-full text-left focus:outline-none cursor-pointer"
@@ -143,19 +157,33 @@ const CounterCard = ({ vehicle, count, onIncrement, onDelete, isPressed }: Count
   );
 };
 
-interface AddVehicleModalProps {
+interface VehicleModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (vehicle: Omit<VehicleType, 'id'>) => void;
+  onSave: (vehicle: Omit<VehicleType, 'id'> & { id?: string }) => void;
   usedKeys: string[];
   colorIndex: number;
+  editingVehicle?: VehicleType | null;
 }
 
-const AddVehicleModal = ({ isOpen, onClose, onAdd, usedKeys, colorIndex }: AddVehicleModalProps) => {
+const VehicleModal = ({ isOpen, onClose, onSave, usedKeys, colorIndex, editingVehicle }: VehicleModalProps) => {
   const [nameTh, setNameTh] = useState('');
   const [name, setName] = useState('');
   const [key, setKey] = useState('');
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (editingVehicle) {
+      setNameTh(editingVehicle.nameTh);
+      setName(editingVehicle.name);
+      setKey(editingVehicle.key);
+    } else {
+      setNameTh('');
+      setName('');
+      setKey('');
+    }
+    setError('');
+  }, [editingVehicle, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,19 +199,35 @@ const AddVehicleModal = ({ isOpen, onClose, onAdd, usedKeys, colorIndex }: AddVe
       return;
     }
 
-    if (usedKeys.includes(key.toLowerCase())) {
+    const otherUsedKeys = editingVehicle 
+      ? usedKeys.filter(k => k !== editingVehicle.key)
+      : usedKeys;
+
+    if (otherUsedKeys.includes(key.toLowerCase())) {
       setError('คีย์นี้ถูกใช้แล้ว กรุณาเลือกคีย์อื่น');
       return;
     }
 
-    const color = customColors[colorIndex % customColors.length];
-    onAdd({
-      nameTh: nameTh.trim(),
-      name: name.trim(),
-      key: key.toLowerCase(),
-      ...color,
-      isCustom: true,
-    });
+    if (editingVehicle) {
+      onSave({
+        id: editingVehicle.id,
+        nameTh: nameTh.trim(),
+        name: name.trim(),
+        key: key.toLowerCase(),
+        colorClass: editingVehicle.colorClass,
+        textColorClass: editingVehicle.textColorClass,
+        isCustom: editingVehicle.isCustom,
+      });
+    } else {
+      const color = customColors[colorIndex % customColors.length];
+      onSave({
+        nameTh: nameTh.trim(),
+        name: name.trim(),
+        key: key.toLowerCase(),
+        ...color,
+        isCustom: true,
+      });
+    }
 
     setNameTh('');
     setName('');
@@ -197,7 +241,9 @@ const AddVehicleModal = ({ isOpen, onClose, onAdd, usedKeys, colorIndex }: AddVe
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md fade-in">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-foreground">เพิ่มประเภทรถใหม่</h2>
+          <h2 className="text-xl font-bold text-foreground">
+            {editingVehicle ? 'แก้ไขประเภทรถ' : 'เพิ่มประเภทรถใหม่'}
+          </h2>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-secondary transition-colors">
             <X className="w-5 h-5" />
           </button>
@@ -252,7 +298,7 @@ const AddVehicleModal = ({ isOpen, onClose, onAdd, usedKeys, colorIndex }: AddVe
             type="submit"
             className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity"
           >
-            เพิ่มประเภทรถ
+            {editingVehicle ? 'บันทึกการแก้ไข' : 'เพิ่มประเภทรถ'}
           </button>
         </form>
       </div>
@@ -292,6 +338,7 @@ const VehicleCounter = () => {
   const [showModal, setShowModal] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
   const [customColorIndex, setCustomColorIndex] = useState(0);
+  const [editingVehicle, setEditingVehicle] = useState<VehicleType | null>(null);
 
   const incrementCount = useCallback((vehicleId: string) => {
     const newLog: CountLog = {
@@ -306,7 +353,7 @@ const VehicleCounter = () => {
     });
 
     setLogs(prev => {
-      const newLogs = [newLog, ...prev].slice(0, 500); // Keep last 500 logs
+      const newLogs = [newLog, ...prev].slice(0, 500);
       localStorage.setItem('vehicleLogs', JSON.stringify(newLogs));
       return newLogs;
     });
@@ -320,23 +367,38 @@ const VehicleCounter = () => {
     localStorage.setItem('vehicleLogs', JSON.stringify([]));
   }, [vehicleTypes]);
 
-  const addVehicleType = useCallback((newVehicle: Omit<VehicleType, 'id'>) => {
-    const id = `custom_${Date.now()}`;
-    const vehicle: VehicleType = { ...newVehicle, id };
-    
-    setVehicleTypes(prev => {
-      const updated = [...prev, vehicle];
-      localStorage.setItem('vehicleTypes', JSON.stringify(updated));
-      return updated;
-    });
+  const saveVehicle = useCallback((vehicleData: Omit<VehicleType, 'id'> & { id?: string }) => {
+    if (vehicleData.id) {
+      // Editing existing vehicle
+      setVehicleTypes(prev => {
+        const updated = prev.map(v => 
+          v.id === vehicleData.id 
+            ? { ...v, nameTh: vehicleData.nameTh, name: vehicleData.name, key: vehicleData.key }
+            : v
+        );
+        localStorage.setItem('vehicleTypes', JSON.stringify(updated));
+        return updated;
+      });
+    } else {
+      // Adding new vehicle
+      const id = `custom_${Date.now()}`;
+      const vehicle: VehicleType = { ...vehicleData, id } as VehicleType;
+      
+      setVehicleTypes(prev => {
+        const updated = [...prev, vehicle];
+        localStorage.setItem('vehicleTypes', JSON.stringify(updated));
+        return updated;
+      });
 
-    setCounts(prev => {
-      const updated = { ...prev, [id]: 0 };
-      localStorage.setItem('vehicleCounts', JSON.stringify(updated));
-      return updated;
-    });
+      setCounts(prev => {
+        const updated = { ...prev, [id]: 0 };
+        localStorage.setItem('vehicleCounts', JSON.stringify(updated));
+        return updated;
+      });
 
-    setCustomColorIndex(prev => prev + 1);
+      setCustomColorIndex(prev => prev + 1);
+    }
+    setEditingVehicle(null);
   }, []);
 
   const deleteVehicleType = useCallback((id: string) => {
@@ -359,8 +421,20 @@ const VehicleCounter = () => {
     });
   }, []);
 
+  const openEditModal = useCallback((vehicle: VehicleType) => {
+    setEditingVehicle(vehicle);
+    setShowModal(true);
+  }, []);
+
+  const openAddModal = useCallback(() => {
+    setEditingVehicle(null);
+    setShowModal(true);
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (showModal) return; // Don't count when modal is open
+      
       const key = e.key.toLowerCase();
       const vehicle = vehicleTypes.find(v => v.key === key);
       
@@ -382,7 +456,7 @@ const VehicleCounter = () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [incrementCount, vehicleTypes]);
+  }, [incrementCount, vehicleTypes, showModal]);
 
   const totalCount = Object.values(counts).reduce((sum, count) => sum + count, 0);
   const usedKeys = vehicleTypes.map(v => v.key);
@@ -401,7 +475,7 @@ const VehicleCounter = () => {
             ระบบนับรถ
           </h1>
           <p className="text-muted-foreground">
-            กดปุ่มบนคีย์บอร์ดหรือคลิกที่การ์ดเพื่อนับ
+            กดปุ่มบนคีย์บอร์ดหรือคลิกที่การ์ดเพื่อนับ • คลิกไอคอนดินสอเพื่อแก้ไข
           </p>
         </header>
 
@@ -423,6 +497,7 @@ const VehicleCounter = () => {
                 vehicle={vehicle}
                 count={counts[vehicle.id] || 0}
                 onIncrement={() => incrementCount(vehicle.id)}
+                onEdit={() => openEditModal(vehicle)}
                 onDelete={vehicle.isCustom ? () => deleteVehicleType(vehicle.id) : undefined}
                 isPressed={pressedKeys[vehicle.key] || false}
               />
@@ -431,7 +506,7 @@ const VehicleCounter = () => {
 
           {/* Add New Vehicle Card */}
           <button
-            onClick={() => setShowModal(true)}
+            onClick={openAddModal}
             className="counter-card border-dashed border-2 border-border hover:border-primary flex flex-col items-center justify-center min-h-[200px] transition-colors group"
           >
             <Plus className="w-12 h-12 text-muted-foreground group-hover:text-primary transition-colors mb-2" />
@@ -500,13 +575,17 @@ const VehicleCounter = () => {
         </div>
       </div>
 
-      {/* Add Vehicle Modal */}
-      <AddVehicleModal
+      {/* Vehicle Modal */}
+      <VehicleModal
         isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        onAdd={addVehicleType}
+        onClose={() => {
+          setShowModal(false);
+          setEditingVehicle(null);
+        }}
+        onSave={saveVehicle}
         usedKeys={usedKeys}
         colorIndex={customColorIndex}
+        editingVehicle={editingVehicle}
       />
     </div>
   );
