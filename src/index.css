@@ -2,95 +2,111 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 222 47% 8%;
+    --foreground: 210 40% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 222 47% 8%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 280 65% 60%;
+    --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 217 33% 20%;
+    --input: 217 33% 20%;
+    --ring: 199 89% 48%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* Custom vehicle colors */
+    --motorcycle: 280 65% 60%;
+    --car: 199 89% 48%;
+    --pickup: 142 71% 45%;
+    --bus: 38 92% 50%;
+    --truck: 0 84% 60%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Gradients */
+    --gradient-motorcycle: linear-gradient(135deg, hsl(280 65% 60%), hsl(280 65% 45%));
+    --gradient-car: linear-gradient(135deg, hsl(199 89% 48%), hsl(199 89% 35%));
+    --gradient-pickup: linear-gradient(135deg, hsl(142 71% 45%), hsl(142 71% 32%));
+    --gradient-bus: linear-gradient(135deg, hsl(38 92% 50%), hsl(38 92% 38%));
+    --gradient-truck: linear-gradient(135deg, hsl(0 84% 60%), hsl(0 84% 45%));
 
-    --sidebar-primary: 240 5.9% 10%;
+    /* Shadows */
+    --shadow-glow-motorcycle: 0 0 30px hsl(280 65% 60% / 0.3);
+    --shadow-glow-car: 0 0 30px hsl(199 89% 48% / 0.3);
+    --shadow-glow-pickup: 0 0 30px hsl(142 71% 45% / 0.3);
+    --shadow-glow-bus: 0 0 30px hsl(38 92% 50% / 0.3);
+    --shadow-glow-truck: 0 0 30px hsl(0 84% 60% / 0.3);
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
 
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 222 47% 8%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary-foreground: 222 47% 8%;
+    --sidebar-accent: 217 33% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 20%;
+    --sidebar-ring: 199 89% 48%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 222 47% 8%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    --card: 222 47% 11%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 222 47% 8%;
 
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 280 65% 60%;
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 217 33% 20%;
+    --input: 217 33% 20%;
+    --ring: 199 89% 48%;
+
+    --sidebar-background: 222 47% 8%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary-foreground: 222 47% 8%;
+    --sidebar-accent: 217 33% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 20%;
+    --sidebar-ring: 199 89% 48%;
   }
 }
 
@@ -100,6 +116,92 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-display;
+    font-family: var(--font-display);
+  }
+}
+
+@layer components {
+  .counter-card {
+    @apply relative overflow-hidden rounded-2xl bg-card border border-border p-6 transition-all duration-300;
+  }
+
+  .counter-card:hover {
+    @apply scale-[1.02];
+  }
+
+  .counter-card.motorcycle {
+    @apply border-l-4;
+    border-left-color: hsl(var(--motorcycle));
+    box-shadow: var(--shadow-glow-motorcycle);
+  }
+
+  .counter-card.car {
+    @apply border-l-4;
+    border-left-color: hsl(var(--car));
+    box-shadow: var(--shadow-glow-car);
+  }
+
+  .counter-card.pickup {
+    @apply border-l-4;
+    border-left-color: hsl(var(--pickup));
+    box-shadow: var(--shadow-glow-pickup);
+  }
+
+  .counter-card.bus {
+    @apply border-l-4;
+    border-left-color: hsl(var(--bus));
+    box-shadow: var(--shadow-glow-bus);
+  }
+
+  .counter-card.truck {
+    @apply border-l-4;
+    border-left-color: hsl(var(--truck));
+    box-shadow: var(--shadow-glow-truck);
+  }
+
+  .key-hint {
+    @apply inline-flex items-center justify-center w-10 h-10 rounded-lg bg-secondary text-foreground font-mono font-bold text-lg uppercase transition-all duration-150;
+  }
+
+  .key-hint:active,
+  .key-hint.pressed {
+    @apply scale-90 bg-primary text-primary-foreground;
+  }
+
+  .count-number {
+    font-family: var(--font-mono);
+    @apply text-5xl md:text-6xl font-bold tabular-nums;
+  }
+
+  .pulse-animation {
+    animation: pulse-scale 0.2s ease-out;
+  }
+
+  @keyframes pulse-scale {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.15);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }
