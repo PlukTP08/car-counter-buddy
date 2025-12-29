@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Bike, Car, Truck, Bus, Plus, X, Clock, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
+import { Bike, Car, Truck, Bus, Plus, X, Clock, ChevronDown, ChevronUp, Pencil, Minus } from 'lucide-react';
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
 
@@ -96,12 +96,13 @@ interface CounterCardProps {
   countIn: number;
   countOut: number;
   onIncrement: (direction: 'in' | 'out') => void;
+  onDecrement: (direction: 'in' | 'out') => void;
   onEdit: () => void;
   onDelete?: () => void;
   isPressed: 'in' | 'out' | null;
 }
 
-const CounterCard = ({ vehicle, countIn, countOut, onIncrement, onEdit, onDelete, isPressed }: CounterCardProps) => {
+const CounterCard = ({ vehicle, countIn, countOut, onIncrement, onDecrement, onEdit, onDelete, isPressed }: CounterCardProps) => {
   const [animatingIn, setAnimatingIn] = useState(false);
   const [animatingOut, setAnimatingOut] = useState(false);
 
@@ -143,7 +144,7 @@ const CounterCard = ({ vehicle, countIn, countOut, onIncrement, onEdit, onDelete
           </button>
         )}
       </div>
-      
+
       <div className="flex items-start justify-between mb-3">
         <div className={`${vehicle.textColorClass}`}>
           {getVehicleIcon(vehicle.id)}
@@ -157,33 +158,54 @@ const CounterCard = ({ vehicle, countIn, countOut, onIncrement, onEdit, onDelete
           </div>
         </div>
       </div>
-      
+
       <div className="space-y-1 mb-3">
         <h3 className="text-lg font-semibold text-foreground">{vehicle.nameTh}</h3>
         <p className="text-sm text-muted-foreground">{vehicle.name}</p>
       </div>
-      
+
       <div className="grid grid-cols-2 gap-2">
-        <button
-          onClick={() => onIncrement('in')}
-          className={`p-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 transition-all ${animatingIn ? 'pulse-animation' : ''}`}
-        >
-          <p className="text-xs text-emerald-400 font-medium mb-1">เข้า ↓</p>
-          <p className={`text-2xl font-bold text-emerald-400`}>
-            {countIn.toLocaleString()}
-          </p>
-        </button>
-        <button
-          onClick={() => onIncrement('out')}
-          className={`p-3 rounded-xl bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/30 transition-all ${animatingOut ? 'pulse-animation' : ''}`}
-        >
-          <p className="text-xs text-orange-400 font-medium mb-1">ออก ↑</p>
-          <p className={`text-2xl font-bold text-orange-400`}>
-            {countOut.toLocaleString()}
-          </p>
-        </button>
+        <div className="flex flex-col gap-1">
+          <button
+            onClick={() => onIncrement('in')}
+            className={`p-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 transition-all ${animatingIn ? 'pulse-animation' : ''} flex-1`}
+          >
+            <p className="text-xs text-emerald-400 font-medium mb-1">เข้า ↓</p>
+            <p className={`text-2xl font-bold text-emerald-400`}>
+              {countIn.toLocaleString()}
+            </p>
+          </button>
+          <button
+            onClick={() => onDecrement('in')}
+            className="py-1.5 px-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/10 text-emerald-500/70 hover:text-emerald-500 transition-colors flex items-center justify-center"
+            title="ลบจำนวนเข้า"
+            disabled={countIn <= 0}
+          >
+            <Minus className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <button
+            onClick={() => onIncrement('out')}
+            className={`p-3 rounded-xl bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/30 transition-all ${animatingOut ? 'pulse-animation' : ''} flex-1`}
+          >
+            <p className="text-xs text-orange-400 font-medium mb-1">ออก ↑</p>
+            <p className={`text-2xl font-bold text-orange-400`}>
+              {countOut.toLocaleString()}
+            </p>
+          </button>
+          <button
+            onClick={() => onDecrement('out')}
+            className="py-1.5 px-2 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/10 text-orange-500/70 hover:text-orange-500 transition-colors flex items-center justify-center"
+            title="ลบจำนวนออก"
+            disabled={countOut <= 0}
+          >
+            <Minus className="w-4 h-4" />
+          </button>
+        </div>
       </div>
-      
+
       <div className="mt-3 pt-3 border-t border-border/50 text-center">
         <p className="text-xs text-muted-foreground">รวม</p>
         <p className={`text-xl font-bold ${vehicle.textColorClass}`}>
@@ -236,7 +258,7 @@ const VehicleModal = ({ isOpen, onClose, onSave, usedKeys, colorIndex, editingVe
       return;
     }
 
-    const otherUsedKeys = editingVehicle 
+    const otherUsedKeys = editingVehicle
       ? usedKeys.filter(k => k !== editingVehicle.key)
       : usedKeys;
 
@@ -397,12 +419,12 @@ const VehicleCounter = () => {
 
     setCounts(prev => {
       const current = prev[vehicleId] || { in: 0, out: 0 };
-      const newCounts = { 
-        ...prev, 
-        [vehicleId]: { 
-          ...current, 
-          [direction]: current[direction] + 1 
-        } 
+      const newCounts = {
+        ...prev,
+        [vehicleId]: {
+          ...current,
+          [direction]: current[direction] + 1
+        }
       };
       localStorage.setItem('vehicleCounts', JSON.stringify(newCounts));
       return newCounts;
@@ -412,6 +434,35 @@ const VehicleCounter = () => {
       const newLogs = [newLog, ...prev].slice(0, 500);
       localStorage.setItem('vehicleLogs', JSON.stringify(newLogs));
       return newLogs;
+    });
+  }, []);
+
+  const decrementCount = useCallback((vehicleId: string, direction: 'in' | 'out') => {
+    setCounts(prev => {
+      const current = prev[vehicleId] || { in: 0, out: 0 };
+      if (current[direction] <= 0) return prev;
+
+      const newCounts = {
+        ...prev,
+        [vehicleId]: {
+          ...current,
+          [direction]: current[direction] - 1
+        }
+      };
+      localStorage.setItem('vehicleCounts', JSON.stringify(newCounts));
+      return newCounts;
+    });
+
+    setLogs(prev => {
+      // Find the most recent log for this vehicle and direction and remove it
+      const index = prev.findIndex(log => log.vehicleId === vehicleId && log.direction === direction);
+      if (index !== -1) {
+        const newLogs = [...prev];
+        newLogs.splice(index, 1);
+        localStorage.setItem('vehicleLogs', JSON.stringify(newLogs));
+        return newLogs;
+      }
+      return prev;
     });
   }, []);
 
@@ -427,8 +478,8 @@ const VehicleCounter = () => {
     if (vehicleData.id) {
       // Editing existing vehicle
       setVehicleTypes(prev => {
-        const updated = prev.map(v => 
-          v.id === vehicleData.id 
+        const updated = prev.map(v =>
+          v.id === vehicleData.id
             ? { ...v, nameTh: vehicleData.nameTh, name: vehicleData.name, key: vehicleData.key }
             : v
         );
@@ -439,7 +490,7 @@ const VehicleCounter = () => {
       // Adding new vehicle
       const id = `custom_${Date.now()}`;
       const vehicle: VehicleType = { ...vehicleData, id } as VehicleType;
-      
+
       setVehicleTypes(prev => {
         const updated = [...prev, vehicle];
         localStorage.setItem('vehicleTypes', JSON.stringify(updated));
@@ -490,10 +541,10 @@ const VehicleCounter = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (showModal) return; // Don't count when modal is open
-      
+
       const key = e.key.toLowerCase();
       const vehicle = vehicleTypes.find(v => v.key === key);
-      
+
       if (vehicle && !e.repeat) {
         const direction: 'in' | 'out' = e.shiftKey ? 'out' : 'in';
         setPressedKeys(prev => ({ ...prev, [key]: direction }));
@@ -575,9 +626,9 @@ const VehicleCounter = () => {
         {/* Vehicle Counters Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           {vehicleTypes.map((vehicle, index) => (
-            <div 
-              key={vehicle.id} 
-              className="fade-in" 
+            <div
+              key={vehicle.id}
+              className="fade-in"
               style={{ animationDelay: `${0.15 + index * 0.05}s` }}
             >
               <CounterCard
@@ -585,6 +636,7 @@ const VehicleCounter = () => {
                 countIn={counts[vehicle.id]?.in || 0}
                 countOut={counts[vehicle.id]?.out || 0}
                 onIncrement={(direction) => incrementCount(vehicle.id, direction)}
+                onDecrement={(direction) => decrementCount(vehicle.id, direction)}
                 onEdit={() => openEditModal(vehicle)}
                 onDelete={vehicle.isCustom ? () => deleteVehicleType(vehicle.id) : undefined}
                 isPressed={pressedKeys[vehicle.key] || null}
