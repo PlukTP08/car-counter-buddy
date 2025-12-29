@@ -43,12 +43,26 @@
     --bus: 38 92% 50%;
     --truck: 0 84% 60%;
 
+    /* Custom vehicle colors */
+    --custom1: 173 80% 40%;
+    --custom2: 330 80% 55%;
+    --custom3: 45 100% 50%;
+    --custom4: 260 70% 55%;
+    --custom5: 15 85% 55%;
+
     /* Gradients */
     --gradient-motorcycle: linear-gradient(135deg, hsl(280 65% 60%), hsl(280 65% 45%));
     --gradient-car: linear-gradient(135deg, hsl(199 89% 48%), hsl(199 89% 35%));
     --gradient-pickup: linear-gradient(135deg, hsl(142 71% 45%), hsl(142 71% 32%));
     --gradient-bus: linear-gradient(135deg, hsl(38 92% 50%), hsl(38 92% 38%));
     --gradient-truck: linear-gradient(135deg, hsl(0 84% 60%), hsl(0 84% 45%));
+
+    /* Custom gradients */
+    --shadow-glow-custom1: 0 0 30px hsl(173 80% 40% / 0.3);
+    --shadow-glow-custom2: 0 0 30px hsl(330 80% 55% / 0.3);
+    --shadow-glow-custom3: 0 0 30px hsl(45 100% 50% / 0.3);
+    --shadow-glow-custom4: 0 0 30px hsl(260 70% 55% / 0.3);
+    --shadow-glow-custom5: 0 0 30px hsl(15 85% 55% / 0.3);
 
     /* Shadows */
     --shadow-glow-motorcycle: 0 0 30px hsl(280 65% 60% / 0.3);
@@ -158,6 +172,36 @@
     @apply border-l-4;
     border-left-color: hsl(var(--truck));
     box-shadow: var(--shadow-glow-truck);
+  }
+
+  .counter-card.custom1 {
+    @apply border-l-4;
+    border-left-color: hsl(var(--custom1));
+    box-shadow: var(--shadow-glow-custom1);
+  }
+
+  .counter-card.custom2 {
+    @apply border-l-4;
+    border-left-color: hsl(var(--custom2));
+    box-shadow: var(--shadow-glow-custom2);
+  }
+
+  .counter-card.custom3 {
+    @apply border-l-4;
+    border-left-color: hsl(var(--custom3));
+    box-shadow: var(--shadow-glow-custom3);
+  }
+
+  .counter-card.custom4 {
+    @apply border-l-4;
+    border-left-color: hsl(var(--custom4));
+    box-shadow: var(--shadow-glow-custom4);
+  }
+
+  .counter-card.custom5 {
+    @apply border-l-4;
+    border-left-color: hsl(var(--custom5));
+    box-shadow: var(--shadow-glow-custom5);
   }
 
   .key-hint {

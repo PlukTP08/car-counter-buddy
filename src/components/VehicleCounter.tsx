@@ -1,23 +1,29 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Bike, Car, Truck, Bus } from 'lucide-react';
+import { Bike, Car, Truck, Bus, Plus, X, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { format } from 'date-fns';
+import { th } from 'date-fns/locale';
 
 interface VehicleType {
   id: string;
   name: string;
   nameTh: string;
   key: string;
-  icon: React.ReactNode;
   colorClass: string;
   textColorClass: string;
+  isCustom?: boolean;
 }
 
-const vehicleTypes: VehicleType[] = [
+interface CountLog {
+  vehicleId: string;
+  timestamp: Date;
+}
+
+const defaultVehicleTypes: VehicleType[] = [
   {
     id: 'motorcycle',
     name: 'Motorcycle',
     nameTh: 'มอเตอร์ไซค์',
     key: 'a',
-    icon: <Bike className="w-8 h-8" />,
     colorClass: 'motorcycle',
     textColorClass: 'text-motorcycle',
   },
@@ -26,7 +32,6 @@ const vehicleTypes: VehicleType[] = [
     name: 'Car',
     nameTh: 'รถยนต์',
     key: 's',
-    icon: <Car className="w-8 h-8" />,
     colorClass: 'car',
     textColorClass: 'text-car',
   },
@@ -35,7 +40,6 @@ const vehicleTypes: VehicleType[] = [
     name: 'Pickup',
     nameTh: 'รถกระบะ',
     key: 'd',
-    icon: <Truck className="w-8 h-8" />,
     colorClass: 'pickup',
     textColorClass: 'text-pickup',
   },
@@ -44,7 +48,6 @@ const vehicleTypes: VehicleType[] = [
     name: 'Bus',
     nameTh: 'รถบัส',
     key: 'f',
-    icon: <Bus className="w-8 h-8" />,
     colorClass: 'bus',
     textColorClass: 'text-bus',
   },
@@ -53,20 +56,44 @@ const vehicleTypes: VehicleType[] = [
     name: 'Truck',
     nameTh: 'รถบรรทุก',
     key: 'g',
-    icon: <Truck className="w-8 h-8" />,
     colorClass: 'truck',
     textColorClass: 'text-truck',
   },
 ];
 
+const customColors = [
+  { colorClass: 'custom1', textColorClass: 'text-custom1' },
+  { colorClass: 'custom2', textColorClass: 'text-custom2' },
+  { colorClass: 'custom3', textColorClass: 'text-custom3' },
+  { colorClass: 'custom4', textColorClass: 'text-custom4' },
+  { colorClass: 'custom5', textColorClass: 'text-custom5' },
+];
+
+const getVehicleIcon = (id: string) => {
+  switch (id) {
+    case 'motorcycle':
+      return <Bike className="w-8 h-8" />;
+    case 'car':
+      return <Car className="w-8 h-8" />;
+    case 'pickup':
+    case 'truck':
+      return <Truck className="w-8 h-8" />;
+    case 'bus':
+      return <Bus className="w-8 h-8" />;
+    default:
+      return <Car className="w-8 h-8" />;
+  }
+};
+
 interface CounterCardProps {
   vehicle: VehicleType;
   count: number;
   onIncrement: () => void;
+  onDelete?: () => void;
   isPressed: boolean;
 }
 
-const CounterCard = ({ vehicle, count, onIncrement, isPressed }: CounterCardProps) => {
+const CounterCard = ({ vehicle, count, onIncrement, onDelete, isPressed }: CounterCardProps) => {
   const [animating, setAnimating] = useState(false);
 
   useEffect(() => {
@@ -78,54 +105,258 @@ const CounterCard = ({ vehicle, count, onIncrement, isPressed }: CounterCardProp
   }, [isPressed, count]);
 
   return (
-    <button
-      onClick={onIncrement}
-      className={`counter-card ${vehicle.colorClass} w-full text-left focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background cursor-pointer`}
-    >
-      <div className="flex items-start justify-between mb-4">
-        <div className={`${vehicle.textColorClass}`}>
-          {vehicle.icon}
+    <div className={`counter-card ${vehicle.colorClass} relative`}>
+      {vehicle.isCustom && onDelete && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="absolute top-2 right-2 p-1 rounded-full bg-secondary hover:bg-destructive transition-colors z-10"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      )}
+      <button
+        onClick={onIncrement}
+        className="w-full text-left focus:outline-none cursor-pointer"
+      >
+        <div className="flex items-start justify-between mb-4">
+          <div className={`${vehicle.textColorClass}`}>
+            {getVehicleIcon(vehicle.id)}
+          </div>
+          <div className={`key-hint ${isPressed ? 'pressed' : ''}`}>
+            {vehicle.key}
+          </div>
         </div>
-        <div className={`key-hint ${isPressed ? 'pressed' : ''}`}>
-          {vehicle.key}
+        
+        <div className="space-y-1">
+          <h3 className="text-lg font-semibold text-foreground">{vehicle.nameTh}</h3>
+          <p className="text-sm text-muted-foreground">{vehicle.name}</p>
         </div>
+        
+        <div className={`count-number mt-4 ${vehicle.textColorClass} ${animating ? 'pulse-animation' : ''}`}>
+          {count.toLocaleString()}
+        </div>
+      </button>
+    </div>
+  );
+};
+
+interface AddVehicleModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onAdd: (vehicle: Omit<VehicleType, 'id'>) => void;
+  usedKeys: string[];
+  colorIndex: number;
+}
+
+const AddVehicleModal = ({ isOpen, onClose, onAdd, usedKeys, colorIndex }: AddVehicleModalProps) => {
+  const [nameTh, setNameTh] = useState('');
+  const [name, setName] = useState('');
+  const [key, setKey] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!nameTh.trim() || !name.trim() || !key.trim()) {
+      setError('กรุณากรอกข้อมูลให้ครบ');
+      return;
+    }
+
+    if (key.length !== 1 || !/[a-z]/i.test(key)) {
+      setError('คีย์ลัดต้องเป็นตัวอักษร A-Z เท่านั้น');
+      return;
+    }
+
+    if (usedKeys.includes(key.toLowerCase())) {
+      setError('คีย์นี้ถูกใช้แล้ว กรุณาเลือกคีย์อื่น');
+      return;
+    }
+
+    const color = customColors[colorIndex % customColors.length];
+    onAdd({
+      nameTh: nameTh.trim(),
+      name: name.trim(),
+      key: key.toLowerCase(),
+      ...color,
+      isCustom: true,
+    });
+
+    setNameTh('');
+    setName('');
+    setKey('');
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md fade-in">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-foreground">เพิ่มประเภทรถใหม่</h2>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-secondary transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              ชื่อภาษาไทย
+            </label>
+            <input
+              type="text"
+              value={nameTh}
+              onChange={(e) => setNameTh(e.target.value)}
+              placeholder="เช่น รถจักรยาน"
+              className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              ชื่อภาษาอังกฤษ
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="เช่น Bicycle"
+              className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              คีย์ลัด (A-Z)
+            </label>
+            <input
+              type="text"
+              value={key}
+              onChange={(e) => setKey(e.target.value.slice(0, 1))}
+              placeholder="เช่น H"
+              maxLength={1}
+              className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary font-mono uppercase"
+            />
+          </div>
+
+          {error && (
+            <p className="text-destructive text-sm">{error}</p>
+          )}
+
+          <button
+            type="submit"
+            className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity"
+          >
+            เพิ่มประเภทรถ
+          </button>
+        </form>
       </div>
-      
-      <div className="space-y-1">
-        <h3 className="text-lg font-semibold text-foreground">{vehicle.nameTh}</h3>
-        <p className="text-sm text-muted-foreground">{vehicle.name}</p>
-      </div>
-      
-      <div className={`count-number mt-4 ${vehicle.textColorClass} ${animating ? 'pulse-animation' : ''}`}>
-        {count.toLocaleString()}
-      </div>
-    </button>
+    </div>
   );
 };
 
 const VehicleCounter = () => {
+  const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>(() => {
+    const saved = localStorage.getItem('vehicleTypes');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    return defaultVehicleTypes;
+  });
+
   const [counts, setCounts] = useState<Record<string, number>>(() => {
     const saved = localStorage.getItem('vehicleCounts');
     if (saved) {
       return JSON.parse(saved);
     }
-    return vehicleTypes.reduce((acc, v) => ({ ...acc, [v.id]: 0 }), {});
+    return defaultVehicleTypes.reduce((acc, v) => ({ ...acc, [v.id]: 0 }), {});
   });
-  
+
+  const [logs, setLogs] = useState<CountLog[]>(() => {
+    const saved = localStorage.getItem('vehicleLogs');
+    if (saved) {
+      return JSON.parse(saved).map((log: any) => ({
+        ...log,
+        timestamp: new Date(log.timestamp),
+      }));
+    }
+    return [];
+  });
+
   const [pressedKeys, setPressedKeys] = useState<Record<string, boolean>>({});
+  const [showModal, setShowModal] = useState(false);
+  const [showLogs, setShowLogs] = useState(false);
+  const [customColorIndex, setCustomColorIndex] = useState(0);
 
   const incrementCount = useCallback((vehicleId: string) => {
+    const newLog: CountLog = {
+      vehicleId,
+      timestamp: new Date(),
+    };
+
     setCounts(prev => {
       const newCounts = { ...prev, [vehicleId]: (prev[vehicleId] || 0) + 1 };
       localStorage.setItem('vehicleCounts', JSON.stringify(newCounts));
       return newCounts;
+    });
+
+    setLogs(prev => {
+      const newLogs = [newLog, ...prev].slice(0, 500); // Keep last 500 logs
+      localStorage.setItem('vehicleLogs', JSON.stringify(newLogs));
+      return newLogs;
     });
   }, []);
 
   const resetCounts = useCallback(() => {
     const zeroCounts = vehicleTypes.reduce((acc, v) => ({ ...acc, [v.id]: 0 }), {});
     setCounts(zeroCounts);
+    setLogs([]);
     localStorage.setItem('vehicleCounts', JSON.stringify(zeroCounts));
+    localStorage.setItem('vehicleLogs', JSON.stringify([]));
+  }, [vehicleTypes]);
+
+  const addVehicleType = useCallback((newVehicle: Omit<VehicleType, 'id'>) => {
+    const id = `custom_${Date.now()}`;
+    const vehicle: VehicleType = { ...newVehicle, id };
+    
+    setVehicleTypes(prev => {
+      const updated = [...prev, vehicle];
+      localStorage.setItem('vehicleTypes', JSON.stringify(updated));
+      return updated;
+    });
+
+    setCounts(prev => {
+      const updated = { ...prev, [id]: 0 };
+      localStorage.setItem('vehicleCounts', JSON.stringify(updated));
+      return updated;
+    });
+
+    setCustomColorIndex(prev => prev + 1);
+  }, []);
+
+  const deleteVehicleType = useCallback((id: string) => {
+    setVehicleTypes(prev => {
+      const updated = prev.filter(v => v.id !== id);
+      localStorage.setItem('vehicleTypes', JSON.stringify(updated));
+      return updated;
+    });
+
+    setCounts(prev => {
+      const { [id]: _, ...rest } = prev;
+      localStorage.setItem('vehicleCounts', JSON.stringify(rest));
+      return rest;
+    });
+
+    setLogs(prev => {
+      const updated = prev.filter(log => log.vehicleId !== id);
+      localStorage.setItem('vehicleLogs', JSON.stringify(updated));
+      return updated;
+    });
   }, []);
 
   useEffect(() => {
@@ -151,9 +382,15 @@ const VehicleCounter = () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [incrementCount]);
+  }, [incrementCount, vehicleTypes]);
 
   const totalCount = Object.values(counts).reduce((sum, count) => sum + count, 0);
+  const usedKeys = vehicleTypes.map(v => v.key);
+
+  const getVehicleName = (id: string) => {
+    const vehicle = vehicleTypes.find(v => v.id === id);
+    return vehicle?.nameTh || id;
+  };
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -186,24 +423,71 @@ const VehicleCounter = () => {
                 vehicle={vehicle}
                 count={counts[vehicle.id] || 0}
                 onIncrement={() => incrementCount(vehicle.id)}
+                onDelete={vehicle.isCustom ? () => deleteVehicleType(vehicle.id) : undefined}
                 isPressed={pressedKeys[vehicle.key] || false}
               />
             </div>
           ))}
+
+          {/* Add New Vehicle Card */}
+          <button
+            onClick={() => setShowModal(true)}
+            className="counter-card border-dashed border-2 border-border hover:border-primary flex flex-col items-center justify-center min-h-[200px] transition-colors group"
+          >
+            <Plus className="w-12 h-12 text-muted-foreground group-hover:text-primary transition-colors mb-2" />
+            <span className="text-muted-foreground group-hover:text-primary transition-colors font-medium">
+              เพิ่มประเภทรถ
+            </span>
+          </button>
         </div>
 
-        {/* Reset Button */}
-        <div className="flex justify-center fade-in" style={{ animationDelay: '0.4s' }}>
+        {/* Action Buttons */}
+        <div className="flex flex-wrap justify-center gap-4 mb-8 fade-in" style={{ animationDelay: '0.4s' }}>
+          <button
+            onClick={() => setShowLogs(!showLogs)}
+            className="flex items-center gap-2 px-6 py-3 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-xl font-medium transition-all duration-200 hover:scale-105 active:scale-95"
+          >
+            <Clock className="w-5 h-5" />
+            ประวัติการนับ
+            {showLogs ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
           <button
             onClick={resetCounts}
-            className="px-6 py-3 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-xl font-medium transition-all duration-200 hover:scale-105 active:scale-95"
+            className="px-6 py-3 bg-destructive/20 hover:bg-destructive/30 text-destructive rounded-xl font-medium transition-all duration-200 hover:scale-105 active:scale-95"
           >
             รีเซ็ตทั้งหมด
           </button>
         </div>
 
+        {/* Logs Section */}
+        {showLogs && (
+          <div className="bg-card border border-border rounded-2xl p-6 mb-8 fade-in">
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-primary" />
+              ประวัติการนับล่าสุด
+            </h3>
+            {logs.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">ยังไม่มีประวัติการนับ</p>
+            ) : (
+              <div className="max-h-64 overflow-y-auto space-y-2">
+                {logs.slice(0, 50).map((log, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between py-2 px-4 bg-secondary/50 rounded-lg"
+                  >
+                    <span className="font-medium text-foreground">{getVehicleName(log.vehicleId)}</span>
+                    <span className="text-sm text-muted-foreground font-mono">
+                      {format(new Date(log.timestamp), 'dd MMM yyyy HH:mm:ss', { locale: th })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Keyboard Hints */}
-        <div className="mt-12 text-center fade-in" style={{ animationDelay: '0.45s' }}>
+        <div className="text-center fade-in" style={{ animationDelay: '0.45s' }}>
           <p className="text-muted-foreground text-sm mb-4">คีย์ลัด</p>
           <div className="flex flex-wrap justify-center gap-4">
             {vehicleTypes.map(vehicle => (
@@ -215,6 +499,15 @@ const VehicleCounter = () => {
           </div>
         </div>
       </div>
+
+      {/* Add Vehicle Modal */}
+      <AddVehicleModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onAdd={addVehicleType}
+        usedKeys={usedKeys}
+        colorIndex={customColorIndex}
+      />
     </div>
   );
 };

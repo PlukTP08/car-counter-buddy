@@ -56,6 +56,11 @@ export default {
         pickup: "hsl(var(--pickup))",
         bus: "hsl(var(--bus))",
         truck: "hsl(var(--truck))",
+        custom1: "hsl(var(--custom1))",
+        custom2: "hsl(var(--custom2))",
+        custom3: "hsl(var(--custom3))",
+        custom4: "hsl(var(--custom4))",
+        custom5: "hsl(var(--custom5))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
